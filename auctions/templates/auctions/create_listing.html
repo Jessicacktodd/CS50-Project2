@@ -1,0 +1,29 @@
+{% block body %}
+
+<h2>List An Item</h2>
+
+<form action="{% url 'create_listing' %}" method="post">
+    {% csrf_token %}
+    <div class="form-group">
+        <input class="form-control" autofocus type="text" name="title" placeholder="Enter Listing Title">
+    </div>
+
+    <div class="form-group">
+        <input class="form-control" type="text" name="description" placeholder="Enter Listing Description">
+    </div>
+
+    <div class="form-group">
+        <input class="form-control" type="number" name="starting_bid" placeholder="Enter Starting Bid">
+    </div>
+
+    <div class="form-group">
+        <input class="form-control" type="url" name="image_url" placeholder="Add An Image">
+    </div>
+
+    <div class="form-group">
+        <input class="form-control" type="text" name="category" placeholder="Add A Category">
+    </div>
+    <button type="submit" class="btn btn-primary">Create Listing</button>
+</form>
+
+{% endblock %}
