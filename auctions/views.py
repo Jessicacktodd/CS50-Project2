@@ -1,11 +1,12 @@
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
+from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from decimal import Decimal, InvalidOperation
 
-from .models import User, AuctionListing
+from .models import User, AuctionListing, Bid
 
 
 def index(request):
@@ -114,3 +115,42 @@ def listing(request, listing_id):
     return render(request, "auctions/listing.html", {
         "listing": listing
     })
+
+
+def place_bid(request, listing_id):
+    if request.method == "POST":
+        listing = get_object_or_404(AuctionListing, pk=listing_id)
+        bid_amount = request.POST.get("bid")
+
+        if not bid_amount:
+            messages.error(request, "Please enter a bid amount.")
+            return render(request, "auctions/listing.html", {"listing": listing})
+
+        try:
+            bid_amount = Decimal(bid_amount)
+        except InvalidOperation:
+            messages.error(request, "Enter a valid number.")
+            return render(request, "auctions/listing.html", {"listing": listing})
+
+        
+        minimum_valid_bid = listing.current_price if listing.current_price else listing.starting_bid
+
+        if bid_amount <= minimum_valid_bid:
+            messages.error(request, "Bid must be higher than the current price.")
+            return render(request, "auctions/listing.html", {"listing": listing})
+
+        
+        bid = Bid(
+            bid_amount=bid_amount,
+            listing=listing,
+            bidder=request.user
+        )
+
+        bid.save()
+
+        listing.current_price = bid_amount
+        listing.save()
+
+        messages.success(request, "Your bid was sucessfully placed.")
+        return redirect("listing", listing_id=listing.id)
+
