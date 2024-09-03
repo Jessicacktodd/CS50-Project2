@@ -96,12 +96,15 @@ def create_listing(request):
                 "message": "Starting bid must be a positive number."
             })
         
+        currentUser = request.user
+
         listing = AuctionListing(
             title=title,
             description=description,
             starting_bid=bid_value,
             image_url=image_url,
             category=category,
+            seller=currentUser
         )
 
         listing.save()
@@ -112,9 +115,20 @@ def create_listing(request):
 
 def listing(request, listing_id):
     listing = get_object_or_404(AuctionListing, pk=listing_id)
-    return render(request, "auctions/listing.html", {
-        "listing": listing
-    })
+    is_seller = request.user == listing.seller 
+    context = {
+        "listing": listing,
+        "is_seller": is_seller
+    }
+
+    if not listing.is_active:
+        highest_bid = listing.bids.order_by('-bid_amount').first()
+        final_price = highest_bid.bid_amount if highest_bid else listing.starting_bid
+        context["final_price"] = final_price
+        context["winner"] = listing.winner
+
+    return render(request, "auctions/listing.html", context)
+
 
 
 def place_bid(request, listing_id):
@@ -153,4 +167,33 @@ def place_bid(request, listing_id):
 
         messages.success(request, "Your bid was sucessfully placed.")
         return redirect("listing", listing_id=listing.id)
+
+
+def close_listing(request, listing_id):
+    listing = get_object_or_404(AuctionListing, pk=listing_id)
+
+    is_seller = request.user == listing.seller
+
+    if is_seller:
+        listing.is_active = False
+        listing.save()
+
+        highest_bid = listing.bids.order_by('-bid_amount').first()
+        if highest_bid:
+            listing.winner = highest_bid.bidder
+            listing.save()
+            final_price = highest_bid.bid_amount
+        else:
+            final_price = listing.starting_bid
+
+        messages.success(request, "The listing has been closed successfully.")
+        return render(request, "auctions/listing.html", {
+                "listing": listing,
+                "is_seller": is_seller,
+                "final_price": final_price,
+                "winner": listing.winner
+            })
+
+    return redirect("listing", listing_id=listing_id)
+
 

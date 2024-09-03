@@ -1,10 +1,9 @@
 {% extends "auctions/layout.html" %}
 
 {% block body %}
-
 {% for message in messages %}
 <div class="container-fluid p-0">
-  <div class="alert {{ message.tags }} alert-dismissible" role="alert" >
+  <div class="alert {{ message.tags }} alert-dismissible" role="alert">
     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
       <span aria-hidden="True">&times;</span>
     </button>
@@ -13,24 +12,25 @@
 </div>
 {% endfor %}
 
-{% if request.user == listing.creator and listing.is_active %}
-    <form action="{% url 'close_listing' listing.id %}" method="post">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-success">Close Listing</button>
-    </form>
+<h2>{{ listing.title }}</h2>
+
+{% if listing.image_url %}
+    <img src="{{ listing.image_url }}" alt="Image for {{ listing.title }}" class="img-fluid">
 {% endif %}
 
+<p><strong>Description:</strong> {{ listing.description }}</p>
+<p><strong>Starting Price:</strong> {{ listing.starting_bid }}</p>
+<p><strong>Current Price:</strong> {{ listing.current_price }}</p>
 
-    <h2>{{ listing.title }}</h2>
-
-    {% if listing.image_url %}
-        <img src="{{ listing.image_url }}" alt="Image for {{ listing.title }}" class="img-fluid">
+{% if listing.is_active %}
+  
+    {% if is_seller %}
+        <form action="{% url 'close_listing' listing.id %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Close Listing</button>
+        </form>
     {% endif %}
-
-    <p><strong>Description:</strong> {{ listing.description }}</p>
-    <p><strong>Starting Price</strong> {{ listing.starting_bid }}</p>
-    <p><strong>Current Price:</strong> {{ listing.current_price }}</p>
-
+    
     {% if user.is_authenticated %}
         <form action="{% url 'place_bid' listing.id %}" method="post">
             {% csrf_token %}
@@ -41,6 +41,15 @@
             <button type="submit" class="btn btn-success">Place Bid</button>
         </form>
     {% endif %}
+{% else %}
+    
+    <h3>Listing Ended</h3>
+    <p><strong>Final Price:</strong> {{ final_price }}</p>
+    {% if winner %}
+        <p><strong>Winner:</strong> {{ winner.username }}</p>
+    {% else %}
+        <p><strong>No bids were placed on this listing.</strong></p>
+    {% endif %}
+{% endif %}
 
-   
 {% endblock %}
