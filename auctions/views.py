@@ -6,7 +6,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from decimal import Decimal, InvalidOperation
 
-from .models import User, AuctionListing, Bid, Comments
+from .models import User, AuctionListing, Bid, Comments, Category
 
 
 def index(request):
@@ -68,48 +68,79 @@ def register(request):
         return render(request, "auctions/register.html")
 
 
+from django.shortcuts import render, redirect
+from django.urls import reverse
+from decimal import Decimal, InvalidOperation
+from django.contrib import messages
+from .models import AuctionListing, Category
+
 def create_listing(request):
     if request.method == "GET":
-        return render(request, "auctions/create_listing.html")
+        # Fetch all categories to display in the dropdown
+        categories = Category.objects.all()
+        return render(request, "auctions/create_listing.html", {"categories": categories})
 
     if request.method == "POST":
-        title = request.POST["title"]
-        description = request.POST["description"]
-        starting_bid = request.POST["starting_bid"]
-        image_url = request.POST["image_url"]
-        category = request.POST["category"]
+        title = request.POST.get("title")
+        description = request.POST.get("description")
+        starting_bid = request.POST.get("starting_bid")
+        image_url = request.POST.get("image_url")
+        category_name = request.POST.get("category_name")  # For existing category
+        new_category_name = request.POST.get("new_category_name")  # For new category
 
+        # Check for missing required fields
         if not title or not description or not starting_bid:
-            return render(request, "auctions/create_listing.html", {
-                "message": "all fields must be completed."
-            })
+            categories = Category.objects.all()
+            messages.error(request, "All fields must be completed.")
+            return render(request, "auctions/create_listing.html", {"categories": categories})
         
+        # Validate starting bid as a decimal number
         try:
             bid_value = Decimal(starting_bid)
         except InvalidOperation:
-            return render(request, "auctions/create_listing.html", {
-                "message": "Starting bid must be a valid number."
-            })
-        
+            categories = Category.objects.all()
+            messages.error(request, "Starting bid must be a valid number.")
+            return render(request, "auctions/create_listing.html", {"categories": categories})
+
         if bid_value <= 0:
-            return render(request, "auctions/create_listing.html", {
-                "message": "Starting bid must be a positive number."
-            })
+            categories = Category.objects.all()
+            messages.error(request, "Starting bid must be a positive number.")
+            return render(request, "auctions/create_listing.html", {"categories": categories})
         
         currentUser = request.user
 
+        # Determine the category to use or create a new one
+        if new_category_name:
+            # Create a new category if a new name is provided
+            category_instance, created = Category.objects.get_or_create(category_name=new_category_name)
+        elif category_name:
+            # Use the existing category if selected
+            try:
+                category_instance = Category.objects.get(category_name=category_name)
+            except Category.DoesNotExist:
+                categories = Category.objects.all()
+                messages.error(request, "Selected category does not exist.")
+                return render(request, "auctions/create_listing.html", {"categories": categories})
+        else:
+            categories = Category.objects.all()
+            messages.error(request, "Please select an existing category or enter a new one.")
+            return render(request, "auctions/create_listing.html", {"categories": categories})
+
+        # Create the new AuctionListing
         listing = AuctionListing(
             title=title,
             description=description,
             starting_bid=bid_value,
             image_url=image_url,
-            category=category,
+            category=category_instance,
             seller=currentUser
         )
 
         listing.save()
 
-        return HttpResponseRedirect(reverse("index"))
+        # Redirect to the index page after saving the new listing
+        return redirect(reverse("index"))
+
     
    
 
@@ -243,3 +274,21 @@ def add_to_watchlist(request, listing_id):
     current_user = request.user
     listing.watchlist.add(current_user)
     return HttpResponseRedirect(reverse("listing", args=(listing_id, )))
+
+
+def categories(request):
+    # Fetch all categories from the database
+    all_categories = Category.objects.all()
+    return render(request, "auctions/categories.html", {"categories": all_categories})
+
+def category_listings(request, category_id):
+    # Fetch the category by ID
+    category = get_object_or_404(Category, pk=category_id)
+    
+    # Get all active listings under this category
+    active_listings = AuctionListing.objects.filter(category=category, is_active=True)
+    
+    return render(request, "auctions/category_listings.html", {
+        "category": category,
+        "listings": active_listings
+    })

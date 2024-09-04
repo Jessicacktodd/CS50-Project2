@@ -1,23 +1,29 @@
 {% extends "auctions/layout.html" %}
 
 {% block body %}
-    <h2>Active Listings</h2>
+<h2>Active Listings</h2>
+
 {% if listings %}
-    <div class="listings">
+    <div class="row">
         {% for listing in listings %}
-            <div class="listing-item">
-                <h3>{{ listing.title }}</h3>
-                <p>{{ listing.description }}</p>
-                <p>Current Price: £{{ listing.starting_bid}}</p>
-                {% if listing.image_url %}
-                    <img src="{{ listing.image_url }}" alt="Image for {{ listing.title }}">
-                {% endif %}
-                <a href="{% url 'listing' listing.id %}" class="btn btn-primary">View Listing</a>
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    {% if listing.image_url %}
+                        <img src="{{ listing.image_url }}" class="card-img-top" alt="Image for {{ listing.title }}">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ listing.title }}</h5>
+                        <p class="card-text">{{ listing.description }}</p>
+                        <p><strong>Current Price:</strong> £{{ listing.current_price }}</p>
+                        <a href="{% url 'listing' listing.id %}" class="btn btn-primary">View Listing</a>
+                    </div>
+                </div>
             </div>
         {% endfor %}
     </div>
-
 {% else %}
     <p>No active listings at the moment.</p>
 {% endif %}
+
 {% endblock %}
+

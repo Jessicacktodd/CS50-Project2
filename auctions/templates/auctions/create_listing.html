@@ -1,29 +1,45 @@
-{% block body %}
+{% extends "auctions/layout.html" %}
 
-<h2>List An Item</h2>
+{% block body %}
+<h2>Create New Listing</h2>
+
+{% if messages %}
+  {% for message in messages %}
+  <div class="alert alert-danger">{{ message }}</div>
+  {% endfor %}
+{% endif %}
 
 <form action="{% url 'create_listing' %}" method="post">
     {% csrf_token %}
     <div class="form-group">
-        <input class="form-control" autofocus type="text" name="title" placeholder="Enter Listing Title">
+        <label for="title">Title</label>
+        <input type="text" class="form-control" name="title" required>
     </div>
-
     <div class="form-group">
-        <input class="form-control" type="text" name="description" placeholder="Enter Listing Description">
+        <label for="description">Description</label>
+        <textarea class="form-control" name="description" required></textarea>
     </div>
-
     <div class="form-group">
-        <input class="form-control" type="number" name="starting_bid" placeholder="Enter Starting Bid">
+        <label for="starting_bid">Starting Bid</label>
+        <input type="number" class="form-control" name="starting_bid" step="0.01" required>
     </div>
-
     <div class="form-group">
-        <input class="form-control" type="url" name="image_url" placeholder="Add An Image">
+        <label for="image_url">Image URL (optional)</label>
+        <input type="url" class="form-control" name="image_url">
     </div>
-
     <div class="form-group">
-        <input class="form-control" type="text" name="category" placeholder="Add A Category">
+        <label for="category">Select an Existing Category</label>
+        <select class="form-control" name="category_name">
+            <option value="">Choose a category</option>
+            {% for category in categories %}
+            <option value="{{ category.category_name }}">{{ category.category_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="new_category_name">Or Add a New Category</label>
+        <input type="text" class="form-control" name="new_category_name" placeholder="Enter new category">
     </div>
     <button type="submit" class="btn btn-primary">Create Listing</button>
 </form>
-
 {% endblock %}
