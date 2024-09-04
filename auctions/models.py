@@ -15,11 +15,11 @@ class AuctionListing(models.Model):
     category = models.CharField(max_length=64, blank=True)
     is_active = models.BooleanField(default=True)
     winner = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="auctions_won", null=True, blank=True)
-    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name="listings")  
+    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name="listings")
 
     def __str__(self):
         return self.title
-    
+
 
 class Bid(models.Model):
     bid_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -27,6 +27,9 @@ class Bid(models.Model):
     bidder = models.ForeignKey(User, on_delete=models.CASCADE)
 
 class Comments(models.Model):
-    comment_text = models.TextField()
-    commenter = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
+    message = models.TextField()
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
     listing = models.ForeignKey(AuctionListing, on_delete=models.CASCADE, related_name="comments")
+
+    def __str__(self):
+        return f"{self.author.username}: {self.message[:20]}..."

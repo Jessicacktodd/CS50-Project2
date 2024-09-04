@@ -52,4 +52,29 @@
     {% endif %}
 {% endif %}
 
+<h2>Comments</h2>
+    
+<br>
+
+{% if user.is_authenticated %}
+    <form action="{% url 'comments' listing.id %}" method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="comments">Add Comment</label>
+            <input type="text" id="comments" name="newComment" placeholder="Add New Comment">
+            <button type="submit" class="btn btn-success">Add Comment</button>
+        </div>
+    </form>
+{% endif %}
+
+<ul class="list-group">
+    {% for comment in listing.comments.all %}
+    <li class="list-group-item">
+        {{ comment.message }}
+        <br>
+        <p>Posted by {{comment.author.username}}</p>
+    </li>
+    {% endfor %}
+</ul>
+
 {% endblock %}

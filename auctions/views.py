@@ -6,7 +6,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from decimal import Decimal, InvalidOperation
 
-from .models import User, AuctionListing, Bid
+from .models import User, AuctionListing, Bid, Comments
 
 
 def index(request):
@@ -116,9 +116,12 @@ def create_listing(request):
 def listing(request, listing_id):
     listing = get_object_or_404(AuctionListing, pk=listing_id)
     is_seller = request.user == listing.seller 
+    comments = listing.comments.all()  
+
     context = {
         "listing": listing,
-        "is_seller": is_seller
+        "is_seller": is_seller,
+        "comments": comments  
     }
 
     if not listing.is_active:
@@ -126,7 +129,7 @@ def listing(request, listing_id):
         final_price = highest_bid.bid_amount if highest_bid else listing.starting_bid
         context["final_price"] = final_price
         context["winner"] = listing.winner
-
+    
     return render(request, "auctions/listing.html", context)
 
 
@@ -197,3 +200,24 @@ def close_listing(request, listing_id):
     return redirect("listing", listing_id=listing_id)
 
 
+def comments(request, listing_id):
+    if request.method == "POST":
+        listing = get_object_or_404(AuctionListing, pk=listing_id)
+        
+        message = request.POST.get("newComment")
+        if not message:
+            messages.error(request, "Please enter comment")
+            return render(request, "auctions/listing.html", {"listing": listing, "comments": listing.comments.all(), "is_seller": request.user == listing.seller})
+        
+        currentUser = request.user
+
+        newComment = Comments(
+            message=message,
+            author=currentUser,
+            listing=listing
+        )
+
+        newComment.save()
+
+        messages.success(request, "Message sucessfully posted")
+        return redirect("listing", listing_id=listing.id)
