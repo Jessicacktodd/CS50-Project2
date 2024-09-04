@@ -116,12 +116,14 @@ def create_listing(request):
 def listing(request, listing_id):
     listing = get_object_or_404(AuctionListing, pk=listing_id)
     is_seller = request.user == listing.seller 
+    in_watchlist = request.user in listing.watchlist.all()
     comments = listing.comments.all()  
 
     context = {
         "listing": listing,
         "is_seller": is_seller,
-        "comments": comments  
+        "in_watchlist": in_watchlist,
+        "comments": listing.comments.all() 
     }
 
     if not listing.is_active:
@@ -221,3 +223,23 @@ def comments(request, listing_id):
 
         messages.success(request, "Message sucessfully posted")
         return redirect("listing", listing_id=listing.id)
+    
+def display_watchlist(request):
+    current_user = request.user
+    listings = current_user.listing_watchlist.all()
+    return render(request, "auctions/watchlist.html", {
+        "listings": listings
+    })
+
+def remove_watchlist(request, listing_id):
+    listing = get_object_or_404(AuctionListing, pk=listing_id)
+    current_user = request.user
+    listing.watchlist.remove(current_user)
+    return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
+
+
+def add_to_watchlist(request, listing_id):
+    listing = get_object_or_404(AuctionListing, pk=listing_id)
+    current_user = request.user
+    listing.watchlist.add(current_user)
+    return HttpResponseRedirect(reverse("listing", args=(listing_id, )))

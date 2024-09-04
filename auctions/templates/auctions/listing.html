@@ -52,6 +52,19 @@
     {% endif %}
 {% endif %}
 
+
+{% if in_watchlist %}
+    <form action="{% url 'removeWatchlist' listing.id %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Remove from Watchlist</button>
+    </form>
+{% else %}
+    <form action="{% url 'addWatchlist' listing.id %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success">Add to Watchlist</button>
+    </form>
+{% endif %}
+
 <h2>Comments</h2>
     
 <br>
